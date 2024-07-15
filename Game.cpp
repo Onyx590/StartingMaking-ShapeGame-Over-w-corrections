@@ -17,21 +17,29 @@ void Game::init(const std::string& path)
 {
 	// todo: read in config file here
 	// use the premade player config, enemyConfig, BullitConfig variables
+	std::cout << "Initializing game with config file: " << path << std::endl;
+
 	std::ifstream fin;
 	std::string objName;
 	fin.open(path);
+
+	if (!fin.is_open()) {
+		std::cerr << "Error: Could not open config file: " << path << std::endl;
+		return;
+	}
+
 	while (fin >> objName)
 	{
 		if (objName == "Window") {
 			int width, height, frameLimit, fullscreen;
 			fin >> width >> height >> frameLimit >> fullscreen;
 			//set up defalut window parameters
-			
+			//m_window.setSize(sf::Vector2u(width, height));
 			if (fullscreen) {
-				m_window.create(sf::VideoMode(width, height), "Assignment 2", sf::Style::Fullscreen);
+				m_window.create(sf::VideoMode(width, height), "ShapeGame", sf::Style::Fullscreen);
 			}
 			else
-				m_window.create(sf::VideoMode(width, height), "Assignment 2");
+				m_window.create(sf::VideoMode(width, height), "ShapeGame");
 			m_window.setFramerateLimit(frameLimit);
 		}
 		else if (objName == "Player") {
@@ -62,34 +70,73 @@ void Game::run()
 	// some systems should function while paused (rendering)
 	// some systems shouldn't (movement/input)
 
-	m_running = m_window.isOpen();
+	std::cout << "Starting game loop" << std::endl;
 
+	m_running = m_window.isOpen();
+	
+	
 	while (m_running)
 	{
+		std::cout << "Polling events" << std::endl;
 		sf::Event event;
 		while (m_window.pollEvent(event)) {
+			std::cout << "Processing event" << std::endl;
 			ImGui::SFML::ProcessEvent(event);
-			if (event.type == sf::Event::Closed)
+			if (event.type == sf::Event::Closed) {
 				m_window.close();
+				m_running = false;
+			}
 		}
 
-		//required update call to imgui
+		if (!m_window.isOpen()) {
+			std::cout << "Window is not open, exiting game loop" << std::endl;
+			m_running = false;
+			break;
+		}
+
 		ImGui::SFML::Update(m_window, m_deltaClock.restart());
+		std::cout << "ImGui update completed" << std::endl;
 
 		sGUI();
+		std::cout << "sGUI completed" << std::endl;
+
+		m_window.clear();
+		std::cout << "Window cleared" << std::endl;
 
 		//update the entity manager
 		update();
-		sEnemySpawner();
-		sMovement();
-		sCollision();
-		sUserInput();
-		
-		sRender();
+		std::cout << "Entity manager updated" << std::endl;
 
+		sEnemySpawner();
+		std::cout << "sEnemySpawner completed" << std::endl;
+
+		sMovement();
+		std::cout << "sMovement completed" << std::endl;
+
+		sCollision();
+		std::cout << "sCollision completed" << std::endl;
+
+		sUserInput();
+		std::cout << "sUserInput completed" << std::endl;
+
+		sRender();
+		std::cout << "sRender completed" << std::endl;
+
+		ImGui::SFML::Render(m_window);
+		std::cout << "ImGui rendered" << std::endl;
+
+		m_window.display();
+		std::cout << "Window displayed" << std::endl;
+
+		if (!m_window.isOpen()) {
+			std::cout << "Window is not open at the end of the loop, exiting game loop" << std::endl;
+			m_running = false;
+		}
 		//increment the current frame	
 		//may need to be moved when spawn is implemented
 	}
+
+	std::cout << "Exiting game loop" << std::endl;
 }
 
 void Game::setPaused(bool paused)
@@ -380,7 +427,7 @@ void Game::sGUI()
 {
 	bool collisioncondi;
 
-	ImGui::Begin("");
+	ImGui::Begin("Test Run");
 	ImGui::Text("Test run of Menu GUI");
 
 	if (ImGui::TreeNode("System Dropdown"))
@@ -409,7 +456,7 @@ void Game::sGUI()
 	{
 		sEnemySpawner();
 	}
-
+	ImGui::End();
 	// Below is the information on entities
 	
 }
@@ -419,9 +466,28 @@ void Game::sRender()
 	//TODO: Draw all entities
 	for (auto& e : m_entities.getEntities())
 	{
+		std::cout << "sRender: Checking entity with ID: " << e->id() << std::endl;
+
+		// Check if the entity is active
 		if (e->isActive())
 		{
-			m_window.draw(e->cShape->circle);
+			std::cout << "sRender: Entity is active, rendering entity with ID: " << e->id() << std::endl;
+
+			// Attempt to draw the entity's shape
+			if (e->cShape)
+			{
+				std::cout << "sRender: Drawing shape for entity with ID: " << e->id() << std::endl;
+				m_window.draw(e->cShape->circle);
+				std::cout << "sRender: Successfully drew shape for entity with ID: " << e->id() << std::endl;
+			}
+			else
+			{
+				std::cout << "sRender: Entity with ID: " << e->id() << " has no shape component" << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "sRender: Entity with ID: " << e->id() << " is not active" << std::endl;
 		}
 	}
 }
