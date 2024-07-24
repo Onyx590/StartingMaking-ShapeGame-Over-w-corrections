@@ -21,6 +21,7 @@ void Game::init(const std::string& path)
 
 	std::ifstream fin;
 	std::string objName;
+	int width, height, frameLimit, fullscreen;
 	fin.open(path);
 
 	if (!fin.is_open()) {
@@ -31,16 +32,11 @@ void Game::init(const std::string& path)
 	while (fin >> objName)
 	{
 		if (objName == "Window") {
-			int width, height, frameLimit, fullscreen;
+			
 			fin >> width >> height >> frameLimit >> fullscreen;
 			//set up defalut window parameters
 			//m_window.setSize(sf::Vector2u(width, height));
-			if (fullscreen) {
-				m_window.create(sf::VideoMode(width, height), "ShapeGame", sf::Style::Fullscreen);
-			}
-			else
-				m_window.create(sf::VideoMode(width, height), "ShapeGame");
-			m_window.setFramerateLimit(frameLimit);
+			
 		}
 		else if (objName == "Player") {
 			fin >> m_playerConfig.SR >> m_playerConfig.CR >> m_playerConfig.S >> m_playerConfig.FR >> m_playerConfig.FG >> m_playerConfig.FB >> m_playerConfig.OR >> m_playerConfig.OG >> m_playerConfig.OB >> m_playerConfig.OT >> m_playerConfig.V;
@@ -55,13 +51,18 @@ void Game::init(const std::string& path)
 		}
 	}
 
-	
+	if (fullscreen) {
+		m_window.create(sf::VideoMode(width, height), "ShapeGame", sf::Style::Fullscreen);
+	}
+	else
+		m_window.create(sf::VideoMode(width, height), "ShapeGame");
+	m_window.setFramerateLimit(frameLimit);
 
 	ImGui::SFML::Init(m_window);
 
 	spawnPlayer();
 
-	run();
+	
 }
 
 void Game::run()
@@ -71,6 +72,7 @@ void Game::run()
 	// some systems shouldn't (movement/input)
 
 	std::cout << "Starting game loop" << std::endl;
+
 
 	m_running = m_window.isOpen();
 	
@@ -94,18 +96,11 @@ void Game::run()
 			break;
 		}
 
-		ImGui::SFML::Update(m_window, m_deltaClock.restart());
-		std::cout << "ImGui update completed" << std::endl;
-
-		sGUI();
-		std::cout << "sGUI completed" << std::endl;
-
-		m_window.clear();
-		std::cout << "Window cleared" << std::endl;
-
-		//update the entity manager
 		update();
 		std::cout << "Entity manager updated" << std::endl;
+
+		ImGui::SFML::Update(m_window, m_deltaClock.restart());
+		std::cout << "ImGui update completed" << std::endl;
 
 		sEnemySpawner();
 		std::cout << "sEnemySpawner completed" << std::endl;
@@ -119,14 +114,11 @@ void Game::run()
 		sUserInput();
 		std::cout << "sUserInput completed" << std::endl;
 
+		sGUI();
+		std::cout << "sGUI completed" << std::endl;
+
 		sRender();
 		std::cout << "sRender completed" << std::endl;
-
-		ImGui::SFML::Render(m_window);
-		std::cout << "ImGui rendered" << std::endl;
-
-		m_window.display();
-		std::cout << "Window displayed" << std::endl;
 
 		if (!m_window.isOpen()) {
 			std::cout << "Window is not open at the end of the loop, exiting game loop" << std::endl;
@@ -134,6 +126,7 @@ void Game::run()
 		}
 		//increment the current frame	
 		//may need to be moved when spawn is implemented
+		m_currentFrame++;
 	}
 
 	std::cout << "Exiting game loop" << std::endl;
@@ -163,11 +156,16 @@ void Game::spawnPlayer()
 	//give entity a transform
 	entity->cTransform = std::make_shared<CTransform>();
 
+	//give entity a collision component
+	entity->cCollision = std::make_shared<CCollision>(m_playerConfig.CR);
+
 	// the entity's shape
 	entity->cShape = std::make_shared<CShape>(m_playerConfig.SR, m_playerConfig.V, sf::Color(m_playerConfig.FR, m_playerConfig.FG, m_playerConfig.FB), sf::Color(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB), m_playerConfig.OT );
 	
 	// add an input component
 	entity->cInput = std::make_shared<CInput>();
+
+	//m_player = entity;
 }
 
 void Game::spawnEnemy()
@@ -190,10 +188,14 @@ void Game::spawnEnemy()
 	int ranCG = static_cast<int>(std::rand() % 255);
 	int ranCB = static_cast<int>(std::rand() % 255);
 
+	enemy->cTransform = std::make_shared<CTransform>(Vec2(ranX, ranY), Vec2(ranSx, ranSy), 12);
+	//setting up enemy transform
+	enemy->cCollision = std::make_shared<CCollision>(m_enemyConfig.CR);
+
 	if (ranX - m_enemyConfig.SR >= 0 && ranX + m_enemyConfig.SR <= m_window.getSize().x &&
 		ranY - m_enemyConfig.SR >= 0 && ranY + m_enemyConfig.SR <= m_window.getSize().y)
 	{
-		enemy->cTransform = std::make_shared<CTransform>(Vec2(ranX, ranY), Vec2(ranSx, ranSy), 12);
+		
 
 
 		enemy->cShape = std::make_shared<CShape>(m_enemyConfig.SR, ranV, sf::Color(ranCR, ranCG, ranCB), sf::Color(m_enemyConfig.OR, m_enemyConfig.OG, m_enemyConfig.OB), m_enemyConfig.OT);
@@ -229,6 +231,8 @@ void Game::spawnSmallEnemies(std::shared_ptr<Entity> e)
 
 		sEnemy->cTransform = std::make_shared<CTransform>(e->cTransform->pos, e->cTransform->velocity, 360 / i);
 
+		sEnemy->cCollision = std::make_shared<CCollision>(e->cCollision->radius * 0.5f);
+
 		float smallSize = e->cShape->circle.getRadius() * 0.5f;
 
 		sEnemy->cShape = std::make_shared<CShape>(smallSize, vertices, e->cShape->circle.getFillColor(), e->cShape->circle.getOutlineColor(), e->cShape->circle.getOutlineThickness());
@@ -253,6 +257,7 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& target)
 
 	bullet->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
 	bullet->cTransform = std::make_shared<CTransform>(entity->cTransform->pos, velocity, angle);
+	bullet->cCollision = std::make_shared<CCollision>(m_bulletConfig.CR);
 	bullet->cLifespan = std::make_shared<CLifespan>(m_bulletConfig.L);
 	
 
@@ -463,6 +468,7 @@ void Game::sGUI()
 
 void Game::sRender()
 {
+	m_window.clear();
 	//TODO: Draw all entities
 	for (auto& e : m_entities.getEntities())
 	{
@@ -490,18 +496,26 @@ void Game::sRender()
 			std::cout << "sRender: Entity with ID: " << e->id() << " is not active" << std::endl;
 		}
 	}
+	ImGui::SFML::Render(m_window);
+	std::cout << "ImGui rendered" << std::endl;
+
+	m_window.display();
 }
 
 void Game::sUserInput()
 {
 	auto playerInput = m_player.cInput;
 
-	playerInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
-	playerInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
-	playerInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
-	playerInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+	if (playerInput)
+	{
+		playerInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
+		playerInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+		playerInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
+		playerInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
 
-	playerInput->shoot = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-
+		playerInput->shoot = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+	} else {
+		std::cout << "Player has no input component" << std::endl;
+	}
 
 }

@@ -17,11 +17,10 @@
 
 int main() {
 
-    std::string enter;
-    std::cout << "Enter file to run" << std::endl;
-    std::cin >> enter;
+   
 
-    Game game(enter);
+    Game game("config.txt");
+    game.run();
     
 
 
