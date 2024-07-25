@@ -155,6 +155,9 @@ void Game::spawnPlayer()
 
 	//give entity a transform
 	entity->cTransform = std::make_shared<CTransform>();
+	//entity->cTransform->pos = Vec2(m_window.getSize().x / 2, m_window.getSize().y / 2);
+
+	//entity->cTransform->pos.normalize();
 
 	//give entity a collision component
 	entity->cCollision = std::make_shared<CCollision>(m_playerConfig.CR);
@@ -165,7 +168,7 @@ void Game::spawnPlayer()
 	// add an input component
 	entity->cInput = std::make_shared<CInput>();
 
-	//m_player = entity;
+	m_player = entity;
 }
 
 void Game::spawnEnemy()
@@ -275,7 +278,7 @@ void Game::sMovement()
 
 	for (auto& entity : m_entities.getEntities())
 	{
-		if (entity->tag() == m_player.tag())
+		if (entity->cInput)
 		{
 			if (entity->cInput->up)
 			{
@@ -480,9 +483,12 @@ void Game::sRender()
 			std::cout << "sRender: Entity is active, rendering entity with ID: " << e->id() << std::endl;
 
 			// Attempt to draw the entity's shape
-			if (e->cShape)
+			if (e->cShape && e->cTransform)
 			{
 				std::cout << "sRender: Drawing shape for entity with ID: " << e->id() << std::endl;
+				e->cShape->circle.setPosition(e->cTransform->pos.x, e->cTransform->pos.y);
+				e->cTransform->angle += 1.0f;
+				e->cShape->circle.setRotation(e->cTransform->angle);
 				m_window.draw(e->cShape->circle);
 				std::cout << "sRender: Successfully drew shape for entity with ID: " << e->id() << std::endl;
 			}
@@ -504,16 +510,24 @@ void Game::sRender()
 
 void Game::sUserInput()
 {
-	auto playerInput = m_player.cInput;
+	auto playerInput = m_player->cInput;
 
 	if (playerInput)
 	{
 		playerInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
+		std::cout << "Player input up: " << playerInput->up << std::endl;
+
 		playerInput->left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+		std::cout << "Player input left: " << playerInput->left << std::endl;
+
 		playerInput->right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
+		std::cout << "Player input right: " << playerInput->right << std::endl;
+
 		playerInput->down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+		std::cout << "Player input down: " << playerInput->down << std::endl;
 
 		playerInput->shoot = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+		std::cout << "Player input shoot: " << playerInput->shoot << std::endl;
 	} else {
 		std::cout << "Player has no input component" << std::endl;
 	}

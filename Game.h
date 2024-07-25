@@ -33,7 +33,7 @@ private:
 	int m_score = 0;
 	int m_currentFrame = 0;
 
-	Entity m_player;
+	std::shared_ptr<Entity> m_player;
 
 	bool m_paused;
 	bool m_running;
