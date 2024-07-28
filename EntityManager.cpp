@@ -7,6 +7,7 @@ EntityManager::EntityManager()
 
 void EntityManager::update()
 {
+	
 	for (auto& ent : m_entitiesToAdd)
 	{
 		m_entities.push_back(ent);

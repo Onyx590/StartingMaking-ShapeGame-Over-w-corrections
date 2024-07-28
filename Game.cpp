@@ -141,6 +141,7 @@ void Game::setPaused(bool paused)
 
 void Game::update()
 {
+	
 	m_entities.update();
 }
 
@@ -410,7 +411,6 @@ void Game::sCollision()
 						{
 							e->destroy();
 							otherE->destroy();
-							update();
 							spawnPlayer();
 						}
 						else if (e->tag() == "Bullet" && otherE->tag() == "Enemy")
@@ -418,7 +418,7 @@ void Game::sCollision()
 							e->destroy();
 							otherE->destroy();
 							spawnSmallEnemies(otherE);
-							update();
+							
 						}
 						else
 						{
