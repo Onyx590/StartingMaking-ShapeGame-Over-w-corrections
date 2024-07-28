@@ -152,18 +152,18 @@ void Game::spawnPlayer()
 	//we create every entity by calling EntityManager.addEntity(tag)
 	// This returns a std::shared_ptr<Entity>, so we use 'auto' to save typing
 	auto entity = m_entities.addEntity("Player");
-
+	// the entity's shape
+	entity->cShape = std::make_shared<CShape>(m_playerConfig.SR, m_playerConfig.V, sf::Color(m_playerConfig.FR, m_playerConfig.FG, m_playerConfig.FB), sf::Color(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB), m_playerConfig.OT );
+	
 	//give entity a transform
+	
 	entity->cTransform = std::make_shared<CTransform>();
-	//entity->cTransform->pos = Vec2(m_window.getSize().x / 2, m_window.getSize().y / 2);
-
-	//entity->cTransform->pos.normalize();
+	Vec2 defaultPos = entity->cTransform->pos = Vec2(m_window.getSize().x / 2, m_window.getSize().y / 2);
 
 	//give entity a collision component
 	entity->cCollision = std::make_shared<CCollision>(m_playerConfig.CR);
 
-	// the entity's shape
-	entity->cShape = std::make_shared<CShape>(m_playerConfig.SR, m_playerConfig.V, sf::Color(m_playerConfig.FR, m_playerConfig.FG, m_playerConfig.FB), sf::Color(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB), m_playerConfig.OT );
+	
 	
 	// add an input component
 	entity->cInput = std::make_shared<CInput>();
@@ -298,6 +298,11 @@ void Game::sMovement()
 			if (entity->cInput->down)
 			{
 				entity->cTransform->pos.y += entity->cTransform->velocity.y * m_playerConfig.S;
+			}
+
+			if (entity->cInput->shoot)
+			{
+				spawnBullet(entity, Vec2(sf::Mouse::getPosition(m_window).x, sf::Mouse::getPosition(m_window).y));
 			}
 		}
 
@@ -510,7 +515,7 @@ void Game::sRender()
 
 void Game::sUserInput()
 {
-	auto playerInput = m_player->cInput;
+	auto &playerInput = m_player->cInput;
 
 	if (playerInput)
 	{
