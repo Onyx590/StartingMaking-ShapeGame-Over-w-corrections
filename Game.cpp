@@ -309,23 +309,28 @@ void Game::sMovement()
 		if (entity->tag() == "Enemy")
 		{
 			entity->cTransform->pos.x += entity->cTransform->velocity.x * m_enemyConfig.SMIN;
+			entity->cTransform->pos.y += entity->cTransform->velocity.y * m_enemyConfig.SMIN;
 			if (entity->cTransform->pos.x - entity->cCollision->radius < 0)
-				{
-					entity->cTransform->pos.x += entity->cTransform->velocity.x * -(m_enemyConfig.SMIN);
-				}
+			{
+				entity->cTransform->velocity.x = -entity->cTransform->velocity.x;
+				entity->cTransform->pos.x += entity->cTransform->velocity.x * (m_enemyConfig.SMIN);
+			}
 			else if (entity->cTransform->pos.x + entity->cCollision->radius > m_window.getSize().x)
 			{
-				entity->cTransform->pos.x += entity->cTransform->velocity.x * -(m_enemyConfig.SMIN);
+				entity->cTransform->velocity.x = -entity->cTransform->velocity.x;
+				entity->cTransform->pos.x += entity->cTransform->velocity.x * (m_enemyConfig.SMIN);
+				
 			}
 
-			entity->cTransform->pos.y += entity->cTransform->velocity.y * m_enemyConfig.SMIN;
 			if (entity->cTransform->pos.y - entity->cCollision->radius < 0)
-				{
-					entity->cTransform->pos.y += entity->cTransform->velocity.y * -(m_enemyConfig.SMIN);
-				}
+			{
+				entity->cTransform->velocity.y = -entity->cTransform->velocity.y;
+				entity->cTransform->pos.y += entity->cTransform->velocity.y * (m_enemyConfig.SMIN);
+			}
 			else if (entity->cTransform->pos.y + entity->cCollision->radius > m_window.getSize().y)
 			{
-				entity->cTransform->pos.y += entity->cTransform->velocity.y * -(m_enemyConfig.SMIN);
+				entity->cTransform->velocity.y = -entity->cTransform->velocity.y;
+				entity->cTransform->pos.y += entity->cTransform->velocity.y * (m_enemyConfig.SMIN);
 			}
 		}
 
