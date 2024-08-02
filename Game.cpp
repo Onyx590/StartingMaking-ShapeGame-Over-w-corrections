@@ -255,14 +255,21 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& target)
 	//  - bullet speed is given as a scalar speed
 	// - you must set the velocity by using formula in notes
 	auto bullet = m_entities.addEntity("Bullet");
-	Vec2 velocity = target - entity->cTransform->pos;
-	float angle = atan2f(velocity.y, velocity.x);
-	
 
 	bullet->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V, sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
-	bullet->cTransform = std::make_shared<CTransform>(entity->cTransform->pos, velocity, angle);
+	bullet->cTransform = std::make_shared<CTransform>(entity->cTransform->pos, Vec2(), 0);//
 	bullet->cCollision = std::make_shared<CCollision>(m_bulletConfig.CR);
-	bullet->cLifespan = std::make_shared<CLifespan>(m_bulletConfig.L);
+	//bullet->cLifespan = std::make_shared<CLifespan>(m_bulletConfig.L);
+
+	Vec2 direction = target - entity->cTransform->pos;
+	direction = direction.normalize();
+
+	Vec2 velocity = direction * m_bulletConfig.S;
+	float angle = atan2f(velocity.y, velocity.x);
+
+	bullet->cTransform->velocity = velocity;
+
+	
 	
 
 }
@@ -300,10 +307,11 @@ void Game::sMovement()
 			{
 				entity->cTransform->pos.y += entity->cTransform->velocity.y * m_playerConfig.S;
 			}
-
 			if (entity->cInput->shoot)
 			{
 				spawnBullet(entity, Vec2(sf::Mouse::getPosition(m_window).x, sf::Mouse::getPosition(m_window).y));
+				//entity->cInput->shoot = false;
+				
 			}
 		}
 
@@ -338,8 +346,8 @@ void Game::sMovement()
 		if (entity->tag() == "Bullet")
 		{
 			//implement path of bullet
-			entity->cTransform->pos.x += entity->cTransform->velocity.x * m_bulletConfig.S;
-			entity->cTransform->pos.y += entity->cTransform->velocity.y * m_bulletConfig.S;
+			entity->cTransform->pos.x += entity->cTransform->velocity.x;
+			entity->cTransform->pos.y += entity->cTransform->velocity.y;
 
 			if (entity->cTransform->pos.x < 0 || entity->cTransform->pos.x > m_window.getSize().x || entity->cTransform->pos.y < 0 || entity->cTransform->pos.y > m_window.getSize().y)
 			{
@@ -522,6 +530,7 @@ void Game::sUserInput()
 {
 	auto &playerInput = m_player->cInput;
 
+
 	if (playerInput)
 	{
 		playerInput->up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
@@ -537,7 +546,6 @@ void Game::sUserInput()
 		std::cout << "Player input down: " << playerInput->down << std::endl;
 
 		playerInput->shoot = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-		std::cout << "Player input shoot: " << playerInput->shoot << std::endl;
 	} else {
 		std::cout << "Player has no input component" << std::endl;
 	}

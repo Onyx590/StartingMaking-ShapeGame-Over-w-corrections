@@ -132,3 +132,10 @@ Vec2 Vec2::normalize() const
 
 	
 }
+
+/*Vec2 Vec2::operator = (const Vec2& rhs)
+{
+	this->x = rhs.x;
+	this->y = rhs.y;
+	return *this;
+}*/
